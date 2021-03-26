@@ -55,7 +55,7 @@ class PixelCNNLayer_down(nn.Module):
          
 
 class PixelCNN(nn.Module):
-    def __init__(self, nr_resnet=5, nr_filters=80, nr_logistic_mix=10, 
+    def __init__(self, nr_resnet=5, nr_filters=80, nr_params=1, 
                     resnet_nonlinearity='concat_elu', input_channels=3, nr_conditional=None):
         super(PixelCNN, self).__init__()
         if resnet_nonlinearity == 'concat_elu' : 
@@ -65,7 +65,6 @@ class PixelCNN(nn.Module):
 
         self.nr_filters = nr_filters
         self.input_channels = input_channels
-        self.nr_logistic_mix = nr_logistic_mix
         self.right_shift_pad = nn.ZeroPad2d((1, 0, 0, 0))
         self.down_shift_pad  = nn.ZeroPad2d((0, 0, 1, 0))
 
@@ -96,8 +95,7 @@ class PixelCNN(nn.Module):
                                        down_right_shifted_conv2d(input_channels + 1, nr_filters, 
                                             filter_size=(2,1), shift_output_right=True)])
     
-        num_mix = 3 if self.input_channels == 1 else 10
-        self.nin_out = nin(nr_filters, num_mix * nr_logistic_mix)
+        self.nin_out = nin(nr_filters, nr_params)
         self.init_padding = None
 
 
