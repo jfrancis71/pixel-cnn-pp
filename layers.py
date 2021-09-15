@@ -131,7 +131,7 @@ class gated_resnet(nn.Module):
         self.conv_out = conv_op(2 * num_filters, 2 * num_filters)
 
         if num_conditional is not None:
-            self.conditional_prj = nn.Linear(num_conditional, num_filters, bias=False)
+            self.conditional_prj = nn.Conv2d(num_conditional, num_filters, kernel_size=1, bias=False)
         else:
             self.conditional_prj = None
 
@@ -142,9 +142,9 @@ class gated_resnet(nn.Module):
             x += self.nin_skip(self.nonlinearity(a))
 
         if conditional is not None:
+            conditional = torch.nn.Upsample(size=(x.shape[2], x.shape[3]))(conditional)
             prj = self.conditional_prj(conditional)
-            add_x = x.permute((2,3,0,1)) + prj
-            x = add_x.permute((2,3,0,1))
+            x = x + prj
 
         x = self.nonlinearity(x)
         x = self.dropout(x)
