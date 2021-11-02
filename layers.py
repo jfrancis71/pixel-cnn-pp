@@ -118,7 +118,7 @@ skip connection parameter : 0 = no skip connection
                             2 = skip connection where skip input size === 2 * input size
 '''
 class gated_resnet(nn.Module):
-    def __init__(self, num_filters, conv_op, nonlinearity=concat_elu, skip_connection=0):
+    def __init__(self, num_filters, conv_op, nonlinearity=concat_elu, skip_connection=0, num_conditional=None):
         super(gated_resnet, self).__init__()
         self.skip_connection = skip_connection
         self.nonlinearity = nonlinearity
@@ -130,11 +130,22 @@ class gated_resnet(nn.Module):
         self.dropout = nn.Dropout2d(0.5)
         self.conv_out = conv_op(2 * num_filters, 2 * num_filters)
 
+        if num_conditional is not None:
+            self.conditional_prj = nn.Linear(num_conditional, num_filters, bias=False)
+        else:
+            self.conditional_prj = None
 
-    def forward(self, og_x, a=None):
+
+    def forward(self, og_x, a=None, conditional=None):
         x = self.conv_input(self.nonlinearity(og_x))
         if a is not None : 
             x += self.nin_skip(self.nonlinearity(a))
+
+        if conditional is not None:
+            prj = self.conditional_prj(conditional)
+            add_x = x.permute((2,3,0,1)) + prj
+            x = add_x.permute((2,3,0,1))
+
         x = self.nonlinearity(x)
         x = self.dropout(x)
         x = self.conv_out(x)
